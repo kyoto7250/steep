@@ -551,26 +551,32 @@ module Steep
         end
       end
 
-      class UnknownConstantAssigned < Base
-        attr_reader :context
+      class UnknownConstant < Base
         attr_reader :name
+        attr_reader :kind
 
-        def initialize(node:, context:, name:)
-          const = node.children[0]
-          loc = if const
-                  const.loc.expression.join(node.loc.name)
-                else
-                  node.loc.name
-                end
-          super(node: node, location: loc)
-          @context = context
+        def initialize(node:, name:)
+          super(node: node, location: node.loc.name)
           @name = name
+          @kind = :constant
+        end
+
+        def class!
+          @kind = :class
+          self
+        end
+
+        def module!
+          @kind = :module
+          self
         end
 
         def header_line
-          "Cannot find the declaration of constant `#{name}`"
+          "Cannot find the declaration of #{kind}: `#{name}`"
         end
       end
+
+      autoload :UnknownConstantAssigned, "steep/diagnostic/deprecated/unknown_constant_assigned"
 
       class FallbackAny < Base
         def initialize(node:)
