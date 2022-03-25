@@ -750,7 +750,7 @@ module Steep
             ImplicitBreakValueMismatch => :warning,
             FallbackAny => :information,
             ElseOnExhaustiveCase => :warning,
-            UnknownConstantAssigned => :warning,
+            UnknownConstant => :warning,
             MethodDefinitionMissing => :information
           }
         ).freeze
@@ -763,7 +763,7 @@ module Steep
             ImplicitBreakValueMismatch => nil,
             FallbackAny => nil,
             ElseOnExhaustiveCase => nil,
-            UnknownConstantAssigned => nil,
+            UnknownConstant => nil,
             MethodDefinitionMissing => nil
           }
         ).freeze
@@ -776,7 +776,7 @@ module Steep
             ImplicitBreakValueMismatch => nil,
             FallbackAny => nil,
             ElseOnExhaustiveCase => nil,
-            UnknownConstantAssigned => nil,
+            UnknownConstant => nil,
             MethodDefinitionMissing => nil,
             UnexpectedJump => nil
           }

@@ -1494,16 +1494,23 @@ module Steep
 
             name_node, super_node, _ = node.children
             _, constr, class_name = synthesize_constant(name_node, name_node.children[0], name_node.children[1]) do
-              Diagnostic::Ruby::UnknownConstant.new(node: name_node, name: name_node.children[1]).class!
+              typing.add_error(
+                Diagnostic::Ruby::UnknownConstant.new(node: name_node, name: name_node.children[1]).class!
+              )
             end
-            if super_node
-              _, constr, super_name = constr.synthesize_constant(super_node, super_node.children[0], super_node.children[1]) do
-                Diagnostic::Ruby::UnknownConstant.new(node: super_node, name: super_node.children[1]).class!
-              end
-            end
-
             if class_name
               typing.source_index.add_definition(constant: class_name, definition: name_node)
+            end
+
+            if super_node
+              _, constr, super_name = constr.synthesize_constant(super_node, super_node.children[0], super_node.children[1]) do
+                typing.add_error(
+                  Diagnostic::Ruby::UnknownConstant.new(node: super_node, name: super_node.children[1]).class!
+                )
+              end
+              if super_name
+                typing.source_index.add_reference(constant: super_name, ref: super_node)
+              end
             end
 
             with_class_constr(node, class_name, super_name) do |constructor|
@@ -1532,7 +1539,7 @@ module Steep
 
             name_node, _ = node.children
             _, constr, module_name = synthesize_constant(name_node, name_node.children[0], name_node.children[1]) do
-              Diagnostic::Ruby::UnknownConstant.new(node: name_node, name: name_node.children[1]).module!
+              typing.add_error Diagnostic::Ruby::UnknownConstant.new(node: name_node, name: name_node.children[1]).module!
             end
 
             if module_name
@@ -1609,7 +1616,14 @@ module Steep
 
         when :casgn
           yield_self do
-            constant_type, constr, constant_name = synthesize_constant(nil, node.children[0], node.children[1])
+            constant_type, constr, constant_name = synthesize_constant(nil, node.children[0], node.children[1]) do
+              typing.add_error(
+                Diagnostic::Ruby::UnknownConstant.new(
+                  node: node,
+                  name: node.children[1]
+                )
+              )
+            end
 
             if constant_name
               typing.source_index.add_definition(constant: constant_name, definition: node)
@@ -2725,14 +2739,14 @@ module Steep
           end
         end
 
-        if node
-          error =
-            if block_given?
-              yield
-            else
+        if block_given?
+          yield
+        else
+          if node
+            constr.typing.add_error(
               Diagnostic::Ruby::UnknownConstant.new(node: node, name: constant_name)
-            end
-          constr.typing.add_error(error)
+            )
+          end
         end
 
         [AST::Builtin.any_type, constr, nil]
